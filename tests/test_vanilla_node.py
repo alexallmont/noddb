@@ -2,7 +2,7 @@ from unittest import TestCase
 from noddb.node import Node, NodeException
 
 
-class TestNodeMethods(TestCase):
+class TestVanillaNodeMethods(TestCase):
     def test_root_node(self):
         foo = Node('foo')
         self.assertEqual(foo.name, 'foo')
