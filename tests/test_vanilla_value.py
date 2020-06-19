@@ -47,7 +47,7 @@ def test_sourced():
 
     with pytest.raises(ValueException) as excinfo:
         bar_in.set_value(9)
-    assert str(excinfo.value) == 'Cannot set input "bar.out" as value is already sourced from "foo.out"'
+    assert str(excinfo.value) == 'Cannot set "bar.out" whilst sourced from "foo.out"'
 
     bar_in.clear_source()
     assert bar_in.is_sourced() == False
@@ -60,14 +60,14 @@ def test_mismatch_set_value():
     n_in = InputValue('in', n, 17)
     with pytest.raises(ValueException) as excinfo:
         n_in.set_value("fish")
-    assert str(excinfo.value) == 'Cannot set input "n.in" (int) to mismatched value of "fish" (str)'
+    assert str(excinfo.value) == 'Cannot set "n.in" (int) to mismatched value fish (str)'
 
 def test_source_from_non_output():
     a = InputValue('a', None, 'this')
     b = InputValue('b', None, 'that')
     with pytest.raises(ValueException) as excinfo:
         b.set_source(a)
-    assert str(excinfo.value) == 'Cannot set non-output "a" to a source'
+    assert str(excinfo.value) == 'Cannot source from non-output "a"'
 
 def test_double_source_input():
     a = OutputValue('a', None, 'this')
@@ -76,21 +76,21 @@ def test_double_source_input():
     c.set_source(a)
     with pytest.raises(ValueException) as excinfo:
         c.set_source(b)
-    assert str(excinfo.value) == 'Cannot set already-connected input "c" from output "b"'
+    assert str(excinfo.value) == 'Cannot source "c" from "b" as already connected to "a"'
 
 def test_source_to_non_input():
     a = OutputValue('a', None, 'this')
     b = OutputValue('b', None, 'that')
     with pytest.raises(ValueException) as excinfo:
         b.set_source(a)
-    assert str(excinfo.value) == 'Cannot set non-input "b" from a source'
+    assert str(excinfo.value) == 'Cannot source to non-input "b"'
 
 def test_source_mismatched_type():
     a = OutputValue('a', None, 23)
     b = InputValue('b', None, 'that')
     with pytest.raises(ValueException) as excinfo:
         b.set_source(a)
-    assert str(excinfo.value) == 'Cannot set input "b" (str) to mismatched output "a" (int)'
+    assert str(excinfo.value) == 'Cannot source "b" (str) to mismatched output "a" (int)'
 
 def test_invalid_clear():
     foo = InputValue('foo', None, 27)
