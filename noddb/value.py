@@ -19,9 +19,21 @@ class Value(Node):
 
     def set_value(self, value):
         if self._input_source:
-            raise ValueException(f'Cannot set input "{self.path()}" as value is already sourced from "{self._input_source.path()}"')
+            raise ValueException(
+                'Cannot set "{}" whilst sourced from "{}"'.format(
+                    self.path(),
+                    self._input_source.path()
+                )
+            )
         if type(self._value) != type(value):
-            raise ValueException(f'Cannot set input "{self.path()}" ({type(self._value).__name__}) to mismatched value of "{value}" ({type(value).__name__})')
+            raise ValueException(
+                'Cannot set "{}" ({}) to mismatched value {} ({})'.format(
+                    self.path(),
+                    type(self._value).__name__,
+                    value,
+                    type(value).__name__
+                )
+            )
         self._value = value
 
     def is_input(self):
@@ -31,23 +43,39 @@ class Value(Node):
         return not self._is_input
 
     def is_sourced(self):
-        return self._input_source != None
+        return self._input_source is not None
 
     def source(self):
         if self._input_source:
             return self._input_source
         return None
 
-    def set_source(self, output_value):
-        if not output_value.is_output():
-            raise ValueException(f'Cannot set non-output "{output_value.path()}" to a source')
-        if self._input_source:
-            raise ValueException(f'Cannot set already-connected input "{self.path()}" from output "{output_value.path()}"')
+    def set_source(self, output):
         if not self.is_input():
-            raise ValueException(f'Cannot set non-input "{self.path()}" from a source')
-        if type(self._value) != type(output_value._value):
-            raise ValueException(f'Cannot set input "{self.path()}" ({type(self._value).__name__}) to mismatched output "{output_value.path()}" ({type(output_value._value).__name__})')
-        self._input_source = output_value
+            raise ValueException(f'Cannot source to non-input "{self.path()}"')
+
+        if not output.is_output():
+            raise ValueException(f'Cannot source from non-output "{output.path()}"')
+
+        if self._input_source:
+            raise ValueException(
+                'Cannot source "{}" from "{}" as already connected to "{}"'.format(
+                    self.path(),
+                    output.path(),
+                    self._input_source.path()
+                )
+            )
+
+        if not isinstance(self._value, type(output._value)):
+            raise ValueException(
+                'Cannot source "{}" ({}) to mismatched output "{}" ({})'.format(
+                    self.path(),
+                    type(self._value).__name__,
+                    output.path(),
+                    type(output._value).__name__
+                )
+            )
+        self._input_source = output
 
     def clear_source(self):
         if not self._input_source:
