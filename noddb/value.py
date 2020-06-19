@@ -43,7 +43,7 @@ class Value(Node):
         return not self._is_input
 
     def is_sourced(self):
-        return self._input_source != None
+        return self._input_source is not None
 
     def source(self):
         if self._input_source:
@@ -66,7 +66,7 @@ class Value(Node):
                 )
             )
 
-        if type(self._value) != type(output._value):
+        if not isinstance(self._value, type(output._value)):
             raise ValueException(
                 'Cannot source "{}" ({}) to mismatched output "{}" ({})'.format(
                     self.path(),

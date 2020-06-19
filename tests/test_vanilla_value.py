@@ -8,24 +8,26 @@ def test_input_value():
     n_in = InputValue('in', n, 11)
     assert n_in.name == 'in'
     assert n_in.path() == 'n.in'
-    assert n_in.is_input() == True
-    assert n_in.is_output() == False
+    assert n_in.is_input() is True
+    assert n_in.is_output() is False
     assert n_in.parent == n
     assert n_in.value() == 11
-    assert n_in.is_sourced() == False
-    assert n_in.source() == None
+    assert n_in.is_sourced() is False
+    assert n_in.source() is None
 
-def test_input_value():
+
+def test_output_value():
     n = Node('n')
     n_out = OutputValue('out', n, 13)
     assert n_out.name == 'out'
     assert n_out.path() == 'n.out'
-    assert n_out.is_input() == False
-    assert n_out.is_output() == True
+    assert n_out.is_input() is False
+    assert n_out.is_output() is True
     assert n_out.parent == n
     assert n_out.value() == 13
-    assert n_out.is_sourced() == False
-    assert n_out.source() == None
+    assert n_out.is_sourced() is False
+    assert n_out.source() is None
+
 
 def test_deep_path():
     foo = Node('foo')
@@ -34,6 +36,7 @@ def test_deep_path():
     tez = InputValue('tez', etc, 17)
     assert tez.path() == 'foo.bar.etc.tez'
 
+
 def test_sourced():
     foo = Node('foo')
     foo_out = OutputValue('out', foo, 7)
@@ -41,7 +44,7 @@ def test_sourced():
     bar_in = InputValue('out', bar, 5)
 
     bar_in.set_source(foo_out)
-    assert bar_in.is_sourced() == True
+    assert bar_in.is_sourced() is True
     assert bar_in.source() == foo_out
     assert bar_in.value() == 7
 
@@ -50,10 +53,11 @@ def test_sourced():
     assert str(excinfo.value) == 'Cannot set "bar.out" whilst sourced from "foo.out"'
 
     bar_in.clear_source()
-    assert bar_in.is_sourced() == False
-    assert bar_in.source() == None
+    assert bar_in.is_sourced() is False
+    assert bar_in.source() is None
     bar_in.set_value(3)
     assert bar_in.value() == 3
+
 
 def test_mismatch_set_value():
     n = Node('n')
@@ -62,12 +66,14 @@ def test_mismatch_set_value():
         n_in.set_value("fish")
     assert str(excinfo.value) == 'Cannot set "n.in" (int) to mismatched value fish (str)'
 
+
 def test_source_from_non_output():
     a = InputValue('a', None, 'this')
     b = InputValue('b', None, 'that')
     with pytest.raises(ValueException) as excinfo:
         b.set_source(a)
     assert str(excinfo.value) == 'Cannot source from non-output "a"'
+
 
 def test_double_source_input():
     a = OutputValue('a', None, 'this')
@@ -78,6 +84,7 @@ def test_double_source_input():
         c.set_source(b)
     assert str(excinfo.value) == 'Cannot source "c" from "b" as already connected to "a"'
 
+
 def test_source_to_non_input():
     a = OutputValue('a', None, 'this')
     b = OutputValue('b', None, 'that')
@@ -85,12 +92,14 @@ def test_source_to_non_input():
         b.set_source(a)
     assert str(excinfo.value) == 'Cannot source to non-input "b"'
 
+
 def test_source_mismatched_type():
     a = OutputValue('a', None, 23)
     b = InputValue('b', None, 'that')
     with pytest.raises(ValueException) as excinfo:
         b.set_source(a)
     assert str(excinfo.value) == 'Cannot source "b" (str) to mismatched output "a" (int)'
+
 
 def test_invalid_clear():
     foo = InputValue('foo', None, 27)
