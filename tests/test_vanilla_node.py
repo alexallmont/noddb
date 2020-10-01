@@ -38,3 +38,17 @@ def test_input_output():
     foo = Node('foo')
     assert foo.is_input() is False
     assert foo.is_output() is False
+
+
+def test_get_item():
+    root = Node('megacorp')
+    bob = Node('bob', root)
+    alice = Node('alice', root)
+    frank = Node('frank', alice)
+
+    assert root['bob'] == bob
+    assert root['alice'] == alice
+    assert root['alice']['frank'] == frank
+    with pytest.raises(NodeException) as excinfo:
+        root['alice']['jimbob']
+    assert str(excinfo.value) == 'Node "megacorp.alice" has no child "jimbob"'

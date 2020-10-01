@@ -43,7 +43,7 @@ def test_visit_values():
 class FindValuesVisitor(Visitor):
     """Search for all values depending on whether they are inputs or outputs"""
 
-    def __init__(self, find_outputs: bool):
+    def __init__(self, find_outputs):
         super().__init__()
         self.find_outputs = find_outputs
         self.found_values = []

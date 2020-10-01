@@ -55,7 +55,7 @@ class LambdaVisitor(Visitor):
         if self.node_lambda:
             self.node_lambda(node)
 
-    def on_visit_value(self, value: Value, _depth: int):
+    def on_visit_value(self, value: Value, depth: int):
         if self.value_lambda:
             self.value_lambda(value)
 

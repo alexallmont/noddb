@@ -25,8 +25,6 @@ def test_output_value():
     assert n_out.is_output() is True
     assert n_out.parent == n
     assert n_out.value() == 13
-    assert n_out.is_sourced() is False
-    assert n_out.source() is None
 
 
 def test_deep_path():
@@ -85,14 +83,6 @@ def test_double_source_input():
     assert str(excinfo.value) == 'Cannot source "c" from "b" as already connected to "a"'
 
 
-def test_source_to_non_input():
-    a = OutputValue('a', None, 'this')
-    b = OutputValue('b', None, 'that')
-    with pytest.raises(ValueException) as excinfo:
-        b.set_source(a)
-    assert str(excinfo.value) == 'Cannot source to non-input "b"'
-
-
 def test_source_mismatched_type():
     a = OutputValue('a', None, 23)
     b = InputValue('b', None, 'that')
@@ -106,3 +96,21 @@ def test_invalid_clear():
     with pytest.raises(ValueException) as excinfo:
         foo.clear_source()
     assert str(excinfo.value) == 'Cannot clear source on non-connected input "foo"'
+
+
+def test_set_source_rshift():
+    n = Node('n')
+    a = OutputValue('a', n, '')
+    b = InputValue('b', n, '')
+    a >> b
+    assert b.source() == a
+
+    b.clear_source()
+    assert b.is_sourced() == False
+    b << a
+    assert b.source() == a
+
+    n['b'].clear_source()
+    assert b.is_sourced() == False
+    n['a'] >> n['b']
+    assert b.source() == a
