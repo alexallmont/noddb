@@ -1,29 +1,114 @@
 class NodeException(Exception):
+    """
+    This exception relates to any problems found whilst creating nodes. In particular
+    that the type and name, and parent-child relationship is valid for the node type.
+    """
     pass
 
 
-class Node:
-    def __init__(self, name, parent=None):
-        self.name = name
-        self.parent = parent
+class NodeBase:
+    """
+    A noddb node is part of a hierarchy that can be represented in a path. This base
+    class is a leaf node that may have a name and parent. Concrete implementations of
+    nodes derive from this class to specify their values which may be connected to
+    form a DAG.
+    The only nodes which shouldn't have a name are those stored in a NodeArray,
+    because the child name is derived from its index in the array.
+    """
+    def __init__(self, parent=None, name=None):
+        self._name = name
+        self._parent = parent
+
         if parent:
-            if name in parent.children:
-                raise NodeException(f'parent "{parent.path()}" already has child "{name}"')
-            parent.children[name] = self
-        self.children = {}
+            if not isinstance(parent, NodeContainer):
+                raise NodeException(f'Nodes must parent to container types; detected add to {parent.typename}')
+            parent._add_child(self)
+        else:
+            if not name:
+                raise NodeException('Unparented leaf nodes must be named')
 
-    def is_input(self):
-        return False
+    @property
+    def name(self):
+        return self._name
 
-    def is_output(self):
-        return False
+    @property
+    def parent(self):
+        return self._parent
+
+    @property
+    def typename(self):
+        return self.__class__.__name__
 
     def path(self):
-        if self.parent:
-            return f'{self.parent.path()}.{self.name}'
-        return self.name
+        result = ''
+        if self._parent:
+            result += self._parent.path()
+
+            # Delimit with a dot for non-array children
+            # FIXME check conditional though type, not by name
+            if self._name[0] != '[':
+                result += '.'
+
+        result += self._name
+        return result
+
+
+class NodeContainer(NodeBase):
+    """
+    Abstract base class for node that contains child nodes that may be accessed
+    using square brackets, e.g. foo['bar'].
+    """
+    def __getitem__(self, _item_name):
+        raise NodeException(f'__getitem__ not implemented for {self.typename}')
+
+    def _add_child(self, child):
+        raise NodeException(f'_add_child not implemented for {self.typename}')
+
+
+class Node(NodeContainer):
+    """
+    This is the most commonly-used node type, with child nodes (and values) keyed
+    stored in a dictionary, keyed by name.
+    """
+    def __init__(self, parent=None, name=None):
+        self._child_dict = {}
+        super().__init__(parent, name)
+
+    def _add_child(self, child):
+        if not isinstance(child._name, str):
+            raise NodeException(f'Node children must be named; unnamed {child.typename} in {self.path()}')
+
+        if child.name in self._child_dict:
+            raise NodeException(f"Node child names must be unique; '{child.name}' already in {self.path()}")
+
+        self._child_dict[child.name] = child
 
     def __getitem__(self, child_name):
-        if child_name not in self.children:
-            raise NodeException(f'Node "{self.path()}" has no child "{child_name}"')
-        return self.children[child_name]
+        if not child_name in self._child_dict:
+            raise NodeException(f"Node {self.path()} does not have child '{child_name}'")
+        return self._child_dict[child_name]
+
+    @property
+    def children(self):
+        return list(self._child_dict.values())
+
+
+class NodeArray(NodeContainer):
+    """
+    An array node container stores children by index.
+    """
+    def __init__(self, parent=None, name=None):
+        self._child_list = []
+        super().__init__(parent, name)
+
+    def _add_child(self, child):
+        if child._name:
+            raise NodeException(f"NodeArray children must not be named; found 'name' in {self.path()}")
+
+        # Convert the name to a convenient alias for fast path lookup
+        child._name = f'[{len(self._child_list)}]'
+        self._child_list.append(child)
+
+    @property
+    def children(self):
+        return self._child_list
