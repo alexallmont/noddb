@@ -1,4 +1,5 @@
-from .visitor import Visitor, VisitorException
+from .visitor import Visitor
+from .visitor import VisitorException  # noqa, F401
 
 
 class NodeException(Exception):
@@ -90,7 +91,7 @@ class Node(NodeContainer):
         self._child_dict[child.name] = child
 
     def __getitem__(self, child_name: str):
-        if not child_name in self._child_dict:
+        if child_name not in self._child_dict:
             raise NodeException(f"Node {self.path()} does not have child '{child_name}'")
         return self._child_dict[child_name]
 
@@ -123,7 +124,9 @@ class NodeArray(NodeContainer):
 
     def __getitem__(self, child_index: int):
         if child_index < 0 or child_index >= len(self._child_list):
-            raise NodeException(f'NodeArray bounds error: {child_index} is not in 0-{len(self._child_list)} for {self.path()}')
+            raise NodeException(
+                f'NodeArray bounds error: {child_index} is not in 0-{len(self._child_list)} for {self.path()}'
+            )
         return self._child_list[child_index]
 
     @property

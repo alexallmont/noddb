@@ -10,13 +10,14 @@ def test_root_node():
     foo = Node(None, 'foo')
     assert foo.name == 'foo'
     assert foo.parent is None
-    assert foo.typename is 'Node'
-    assert foo.path() is 'foo'
+    assert foo.typename == 'Node'
+    assert foo.path() == 'foo'
     assert foo.children == []
 
     with pytest.raises(NodeException) as excinfo:
         _ = Node(None, None)
     assert str(excinfo.value) == 'Unparented leaf nodes must be named'
+
 
 def test_node_base_misuse():
     root = NodeBase(None, 'root')
@@ -28,7 +29,7 @@ def test_node_base_misuse():
 def test_sub_node():
     foo = Node(None, 'foo')
     bar = Node(foo, 'bar')
-    assert foo.parent == None
+    assert foo.parent is None
     assert foo.children == [bar]
     assert bar.parent == foo
     assert bar.name == 'bar'

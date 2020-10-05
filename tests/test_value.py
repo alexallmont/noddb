@@ -56,6 +56,7 @@ def test_sourced():
     bar_in.set_value(3)
     assert bar_in.value() == 3
 
+
 def test_mismatch_set_value():
     n = Node(None, 'n')
     n_in = InputValue(n, 'in', 17)
@@ -108,7 +109,7 @@ def test_connect():
     b.clear_source()
     assert b.value() == 'stuff'
     b.set_value('etc')
-    assert b.is_sourced() == False
+    assert b.is_sourced() is False
     assert b.value() == 'etc'
     b << a
     assert b.source() == a
@@ -117,7 +118,7 @@ def test_connect():
     n['b'].clear_source()
     n['b'].set_value('oof')
     assert b.value() == 'oof'
-    assert b.is_sourced() == False
+    assert b.is_sourced() is False
     n['a'] >> n['b']
     assert b.source() == a
     assert b.value() == 'stuff'

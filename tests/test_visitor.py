@@ -1,5 +1,3 @@
-import pytest
-
 from noddb.node import Node, NodeArray
 from noddb.value import InputValue, OutputValue
 from noddb.visitor import Visitor
