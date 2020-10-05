@@ -1,4 +1,5 @@
-from .node import Node
+from __future__ import annotations
+from .node import Node, NodeContainer
 
 
 class ValueException(Exception):
@@ -16,7 +17,7 @@ class ValueBase(Node):
     are either inputs or outputs, which have different behaviour for setting
     values and for connectability.
     """
-    def __init__(self, node, name, value):
+    def __init__(self, node: NodeContainer, name: str, value):
         super().__init__(parent=node, name=name)
         self._value = value
 
@@ -50,7 +51,7 @@ class OutputValue(ValueBase):
     def is_output(self):
         return True
 
-    def __rshift__(self, input_value):
+    def __rshift__(self, input_value: InputValue):
         input_value.set_source(self)
 
 
@@ -60,7 +61,7 @@ class InputValue(ValueBase):
     specific output. This 'sourcing' of the the input value allows data
     to flow through the node-value graph.
     """
-    def __init__(self, node, name, value):
+    def __init__(self, node: NodeBase, name: str, value):
         super().__init__(node, name, value)
         self._source = None
 
@@ -90,7 +91,7 @@ class InputValue(ValueBase):
             return self._source
         return None
 
-    def set_source(self, output):
+    def set_source(self, output: OutputValue):
         if not output.is_output():
             raise ValueException(f'Cannot source from non-output "{output.path()}"')
 
@@ -119,5 +120,5 @@ class InputValue(ValueBase):
             raise ValueException(f'Cannot clear source on non-connected input "{self.path()}"')
         self._source = None
 
-    def __lshift__(self, output_value):
+    def __lshift__(self, output_value: OutputValue):
         self.set_source(output_value)

@@ -58,10 +58,10 @@ class NodeContainer(NodeBase):
     Abstract base class for node that contains child nodes that may be accessed
     using square brackets, e.g. foo['bar'].
     """
-    def __getitem__(self, _item_name):
+    def __getitem__(self, _item_name: str):
         raise NodeException(f'__getitem__ not implemented for {self.typename}')
 
-    def _add_child(self, child):
+    def _add_child(self, child: NodeBase):
         raise NodeException(f'_add_child not implemented for {self.typename}')
 
 
@@ -74,7 +74,7 @@ class Node(NodeContainer):
         self._child_dict = {}
         super().__init__(parent, name)
 
-    def _add_child(self, child):
+    def _add_child(self, child: NodeBase):
         if not isinstance(child._name, str):
             raise NodeException(f'Node children must be named: unnamed {child.typename} in {self.path()}')
 
@@ -83,7 +83,7 @@ class Node(NodeContainer):
 
         self._child_dict[child.name] = child
 
-    def __getitem__(self, child_name):
+    def __getitem__(self, child_name: str):
         if not child_name in self._child_dict:
             raise NodeException(f"Node {self.path()} does not have child '{child_name}'")
         return self._child_dict[child_name]
@@ -101,7 +101,7 @@ class NodeArray(NodeContainer):
         self._child_list = []
         super().__init__(parent, name)
 
-    def _add_child(self, child):
+    def _add_child(self, child: NodeBase):
         if child._name:
             raise NodeException(f"NodeArray children must not be named: found 'name' in {self.path()}")
 
@@ -109,7 +109,7 @@ class NodeArray(NodeContainer):
         child._name = f'[{len(self._child_list)}]'
         self._child_list.append(child)
 
-    def __getitem__(self, child_index):
+    def __getitem__(self, child_index: int):
         if child_index < 0 or child_index >= len(self._child_list):
             raise NodeException(f'NodeArray bounds error: {child_index} is not in 0-{len(self._child_list)} for {self.path()}')
         return self._child_list[child_index]
