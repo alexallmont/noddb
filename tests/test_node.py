@@ -22,7 +22,8 @@ def test_node_base_misuse():
     root = NodeBase(None, 'root')
     with pytest.raises(NodeException) as excinfo:
         _ = Node(root, 'etc')
-    assert str(excinfo.value) == 'Nodes must parent to container types: detected add to NodeBase'
+    assert str(excinfo.value) == "Nodes must parent to container types: parent is <class 'noddb.node.NodeBase'>"
+
 
 def test_sub_node():
     foo = Node(None, 'foo')

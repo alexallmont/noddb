@@ -21,7 +21,7 @@ class NodeBase:
 
         if parent:
             if not isinstance(parent, NodeContainer):
-                raise NodeException(f'Nodes must parent to container types: detected add to {parent.typename}')
+                raise NodeException(f'Nodes must parent to container types: parent is {type(parent)}')
             parent._add_child(self)
         else:
             if not name:
