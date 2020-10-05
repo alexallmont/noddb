@@ -1,3 +1,6 @@
+from .visitor import Visitor, VisitorException
+
+
 class NodeException(Exception):
     """
     This exception relates to any problems found whilst creating nodes. In particular
@@ -91,6 +94,12 @@ class Node(NodeContainer):
             raise NodeException(f"Node {self.path()} does not have child '{child_name}'")
         return self._child_dict[child_name]
 
+    def visit(self, visitor: Visitor):
+        visitor.on_node_enter(self)
+        for child in self._child_dict.values():
+            child.visit(visitor)
+        visitor.on_node_exit(self)
+
     @property
     def children(self):
         return list(self._child_dict.values())
@@ -120,3 +129,9 @@ class NodeArray(NodeContainer):
     @property
     def children(self):
         return self._child_list
+
+    def visit(self, visitor: Visitor):
+        visitor.on_node_array_enter(self)
+        for child in self._child_list:
+            child.visit(visitor)
+        visitor.on_node_array_exit(self)

@@ -54,6 +54,9 @@ class OutputValue(ValueBase):
     def __rshift__(self, input_value: InputValue):
         input_value.set_source(self)
 
+    def visit(self, visitor: Visitor):
+        visitor.on_output(self)
+
 
 class InputValue(ValueBase):
     """
@@ -122,3 +125,6 @@ class InputValue(ValueBase):
 
     def __lshift__(self, output_value: OutputValue):
         self.set_source(output_value)
+
+    def visit(self, visitor: Visitor):
+        visitor.on_input(self)

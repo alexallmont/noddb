@@ -1,70 +1,148 @@
 import pytest
 
-from noddb.node import Node
-from noddb.value import InputValue, OutputValue, Value
-from noddb.visitor import Visitor, visit
+from noddb.node import Node, NodeArray
+from noddb.value import InputValue, OutputValue
+from noddb.visitor import Visitor
 
 
-def test_visit_children():
-    root = Node('root')
-    Node('a', root)
-    Node('b', root)
+class LambdaVisitor(Visitor):
+    def __init__(self, fn):
+        self.fn = fn
 
-    # Check that all names may be accumulated by a lambda
-    all_names = []
-    visit(
-        root,
-        node_lambda=lambda node: all_names.append(node.path())
-    )
-    assert all_names == ['root', 'root.a', 'root.b']
+    def on_node_enter(self, node: Node):
+        self.fn(node)
 
+    def on_node_exit(self, node: Node):
+        self.fn(node)
 
-class ValueTestNode(Node):
-    """Concrete node with input and output for testing value visitation"""
+    def on_node_array_enter(self, node: NodeArray):
+        self.fn(node)
 
-    def __init__(self, name, parent=None):
-        super().__init__(name, parent)
-        InputValue('in', self, int(0))
-        OutputValue('out', self, float(0))
+    def on_node_array_exit(self, node: NodeArray):
+        self.fn(node)
+
+    def on_input(self, value: InputValue):
+        self.fn(node)
+
+    def on_output(self, value: OutputValue):
+        self.fn(node)
 
 
 def test_visit_values():
-    root = Node('root')
-    ValueTestNode('a', root)
+    fish = Node(None, 'fish')
+    InputValue(fish, 'fingers', int(0))
+    OutputValue(fish, 'knees', False)
+    OutputValue(fish, 'toes', '')
 
-    all_inputs = []
-    visit(
-        root,
-        value_lambda=lambda value: all_inputs.append(value.path()) if value.is_input() else None
-    )
-    assert all_inputs == ['root.a.in']
+    class ValueCounter(Visitor):
+        def __init__(self):
+            self.input_count = 0
+            self.output_count = 0
 
+        def on_input(self, value: InputValue):
+            self.input_count += 1
 
-class FindValuesVisitor(Visitor):
-    """Search for all values depending on whether they are inputs or outputs"""
+        def on_output(self, value: OutputValue):
+            self.output_count += 1
 
-    def __init__(self, find_outputs):
-        super().__init__()
-        self.find_outputs = find_outputs
-        self.found_values = []
-
-    def on_visit_value(self, value: Value, depth: int):
-        if self.find_outputs:
-            if value.is_output():
-                self.found_values.append(value)
-        else:
-            if value.is_input():
-                self.found_values.append(value)
+    counter = ValueCounter()
+    fish.visit(counter)
+    assert counter.input_count == 1
+    assert counter.output_count == 2
 
 
-def test_custom_visitor():
-    root = Node('root')
-    child = ValueTestNode('a', root)
+def test_visit_order():
+    class CollatePaths(Visitor):
+        def __init__(self):
+            self.paths = []
 
-    input_visitor = FindValuesVisitor(find_outputs=False)
-    input_visitor.visit(root)
-    assert input_visitor.found_values == [child.children['in']]
+        def on_node_enter(self, node: Node):
+            self.paths.append(node.path())
 
-    output_visitor = FindValuesVisitor(find_outputs=True)
-    output_visitor.visit(root)
-    assert output_visitor.found_values == [child.children['out']]
+        def on_node_array_enter(self, node: NodeArray):
+            self.paths.append(node.path())
+
+        def on_input(self, value: InputValue):
+            self.paths.append(value.path())
+
+        def on_output(self, value: OutputValue):
+            self.paths.append(value.path())
+
+    root = Node(None, 'root')
+    foo = Node(root, 'foo')
+    InputValue(foo, 'x', True)
+    bar = Node(root, 'bar')
+    OutputValue(bar, 'y', False)
+
+    collator = CollatePaths()
+    root.visit(collator)
+    assert collator.paths == ['root', 'root.foo', 'root.foo.x', 'root.bar', 'root.bar.y']
+
+
+def test_visit_containers():
+    class ReportContainers(Visitor):
+        def __init__(self):
+            self.log = []
+
+        def on_node_enter(self, node: Node):
+            self.log.append(f'enter:{node.path()}')
+
+        def on_node_exit(self, node: Node):
+            self.log.append(f'exit:{node.path()}')
+
+        def on_node_array_enter(self, node: Node):
+            self.log.append(f'enter_array:{node.path()}')
+
+        def on_node_array_exit(self, node: Node):
+            self.log.append(f'exit_array:{node.path()}')
+
+    root = Node(None, 'root')
+    a = Node(root, 'foo')
+    b = Node(a, 'etc')
+    OutputValue(b, 'value_ignored_by_visitor', int)
+    c = NodeArray(root, 'bar')
+    d = Node(c)
+    InputValue(d, 'value_ignored_by_visitor', int)
+
+    reporter = ReportContainers()
+    root.visit(reporter)
+    assert reporter.log == [
+        'enter:root',
+        'enter:root.foo',
+        'enter:root.foo.etc',
+        'exit:root.foo.etc',
+        'exit:root.foo',
+        'enter_array:root.bar',
+        'enter:root.bar[0]',
+        'exit:root.bar[0]',
+        'exit_array:root.bar',
+        'exit:root'
+    ]
+
+    # Check that arrays also work as root elements
+    root_array = NodeArray(None, 'root_array')
+    Node(root_array)
+    Node(root_array)
+    Node(root_array[1], 'foo')
+    NodeArray(root_array)
+    Node(root_array[2])
+    Node(root_array[2][0], 'bar')
+
+    reporter2 = ReportContainers()
+    root_array.visit(reporter2)
+    assert reporter2.log == [
+        'enter_array:root_array',
+        'enter:root_array[0]',
+        'exit:root_array[0]',
+        'enter:root_array[1]',
+        'enter:root_array[1].foo',
+        'exit:root_array[1].foo',
+        'exit:root_array[1]',
+        'enter_array:root_array[2]',
+        'enter:root_array[2][0]',
+        'enter:root_array[2][0].bar',
+        'exit:root_array[2][0].bar',
+        'exit:root_array[2][0]',
+        'exit_array:root_array[2]',
+        'exit_array:root_array'
+    ]
