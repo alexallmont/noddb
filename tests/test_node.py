@@ -22,7 +22,7 @@ def test_node_base_misuse():
     root = NodeBase(None, 'root')
     with pytest.raises(NodeException) as excinfo:
         _ = Node(root, 'etc')
-    assert str(excinfo.value) == 'Nodes must parent to container types; detected add to NodeBase'
+    assert str(excinfo.value) == 'Nodes must parent to container types: detected add to NodeBase'
 
 def test_sub_node():
     foo = Node(None, 'foo')
@@ -35,7 +35,7 @@ def test_sub_node():
 
     with pytest.raises(NodeException) as excinfo:
         _ = Node(foo, None)
-    assert str(excinfo.value) == 'Node children must be named; unnamed Node in foo'
+    assert str(excinfo.value) == 'Node children must be named: unnamed Node in foo'
 
 
 def test_dup_sub_node():
@@ -44,7 +44,7 @@ def test_dup_sub_node():
 
     with pytest.raises(NodeException) as excinfo:
         _ = Node(foo, 'bar')
-    assert str(excinfo.value) == "Node child names must be unique; 'bar' already in foo"
+    assert str(excinfo.value) == "Node child names must be unique: 'bar' already in foo"
 
 
 def test_node_array():
@@ -65,9 +65,15 @@ def test_node_array():
     assert d.path() == 'rootlist[2]'
     assert e.path() == 'rootlist[2][0]'
 
+    assert root[0] == a
+    assert root[1] == b
+    assert root[1]['foo'] == c
+    assert root[2] == d
+    assert root[2][0] == e
+
     with pytest.raises(NodeException) as excinfo:
         _ = Node(root, 'bar')
-    assert str(excinfo.value) == "NodeArray children must not be named; found 'name' in rootlist"
+    assert str(excinfo.value) == "NodeArray children must not be named: found 'name' in rootlist"
 
 
 def test_get_item():

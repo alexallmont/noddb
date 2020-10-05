@@ -21,7 +21,7 @@ class NodeBase:
 
         if parent:
             if not isinstance(parent, NodeContainer):
-                raise NodeException(f'Nodes must parent to container types; detected add to {parent.typename}')
+                raise NodeException(f'Nodes must parent to container types: detected add to {parent.typename}')
             parent._add_child(self)
         else:
             if not name:
@@ -76,10 +76,10 @@ class Node(NodeContainer):
 
     def _add_child(self, child):
         if not isinstance(child._name, str):
-            raise NodeException(f'Node children must be named; unnamed {child.typename} in {self.path()}')
+            raise NodeException(f'Node children must be named: unnamed {child.typename} in {self.path()}')
 
         if child.name in self._child_dict:
-            raise NodeException(f"Node child names must be unique; '{child.name}' already in {self.path()}")
+            raise NodeException(f"Node child names must be unique: '{child.name}' already in {self.path()}")
 
         self._child_dict[child.name] = child
 
@@ -103,11 +103,16 @@ class NodeArray(NodeContainer):
 
     def _add_child(self, child):
         if child._name:
-            raise NodeException(f"NodeArray children must not be named; found 'name' in {self.path()}")
+            raise NodeException(f"NodeArray children must not be named: found 'name' in {self.path()}")
 
         # Convert the name to a convenient alias for fast path lookup
         child._name = f'[{len(self._child_list)}]'
         self._child_list.append(child)
+
+    def __getitem__(self, child_index):
+        if child_index < 0 or child_index >= len(self._child_list):
+            raise NodeException(f'NodeArray bounds error: {child_index} is not in 0-{len(self._child_list)} for {self.path()}')
+        return self._child_list[child_index]
 
     @property
     def children(self):
