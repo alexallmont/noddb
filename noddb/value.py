@@ -1,30 +1,36 @@
-from .node import Node
+from __future__ import annotations
+from .node import Node, NodeContainer
 
 
 class ValueException(Exception):
+    """
+    This exception is raised if there is a problem setting what is stored in the
+    value, or for invalid connections between outputs and inputs.
+    """
     pass
 
 
-class Value(Node):
-    def __init__(self, name, node, value, is_input):
-        super().__init__(name, node)
+class ValueBase(Node):
+    """
+    Abstract base for storing a value in a node. This is a child of a node so
+    derives from Node to inherit the parent-child behaviour. Concrete values
+    are either inputs or outputs, which have different behaviour for setting
+    values and for connectability.
+    """
+    def __init__(self, node: NodeContainer, name: str, value):
+        super().__init__(parent=node, name=name)
         self._value = value
-        self._input_source = None
-        self._is_input = is_input
+
+    def is_input(self):
+        return False
+
+    def is_output(self):
+        return False
 
     def value(self):
-        if self._input_source:
-            self._value = self._input_source.value()
         return self._value
 
     def set_value(self, value):
-        if self._input_source:
-            raise ValueException(
-                'Cannot set "{}" whilst sourced from "{}"'.format(
-                    self.path(),
-                    self._input_source.path()
-                )
-            )
         if type(self._value) != type(value):
             raise ValueException(
                 'Cannot set "{}" ({}) to mismatched value {} ({})'.format(
@@ -36,33 +42,68 @@ class Value(Node):
             )
         self._value = value
 
-    def is_input(self):
-        return self._is_input
 
+class OutputValue(ValueBase):
+    """
+    An output is a value that has a right shift >> operator so it may be
+    connected to any number of inputs, overriding their value.
+    """
     def is_output(self):
-        return not self._is_input
+        return True
+
+    def __rshift__(self, input_value: InputValue):
+        input_value.set_source(self)
+
+    def visit(self, visitor: Visitor):
+        visitor.on_output(self)
+
+
+class InputValue(ValueBase):
+    """
+    An input is a value that may be overridden by being connected to a
+    specific output. This 'sourcing' of the the input value allows data
+    to flow through the node-value graph.
+    """
+    def __init__(self, node: NodeBase, name: str, value):
+        super().__init__(node, name, value)
+        self._source = None
+
+    def is_input(self):
+        return True
+
+    def value(self):
+        if self._source:
+            self._value = self._source.value()
+        return self._value
+
+    def set_value(self, value):
+        if self._source:
+            raise ValueException(
+                'Cannot set "{}" whilst sourced from "{}"'.format(
+                    self.path(),
+                    self._source.path()
+                )
+            )
+        super().set_value(value)
 
     def is_sourced(self):
-        return self._input_source is not None
+        return self._source is not None
 
     def source(self):
-        if self._input_source:
-            return self._input_source
+        if self._source:
+            return self._source
         return None
 
-    def set_source(self, output):
-        if not self.is_input():
-            raise ValueException(f'Cannot source to non-input "{self.path()}"')
-
+    def set_source(self, output: OutputValue):
         if not output.is_output():
             raise ValueException(f'Cannot source from non-output "{output.path()}"')
 
-        if self._input_source:
+        if self._source:
             raise ValueException(
                 'Cannot source "{}" from "{}" as already connected to "{}"'.format(
                     self.path(),
                     output.path(),
-                    self._input_source.path()
+                    self._source.path()
                 )
             )
 
@@ -75,19 +116,15 @@ class Value(Node):
                     type(output._value).__name__
                 )
             )
-        self._input_source = output
+        self._source = output
 
     def clear_source(self):
-        if not self._input_source:
+        if not self._source:
             raise ValueException(f'Cannot clear source on non-connected input "{self.path()}"')
-        self._input_source = None
+        self._source = None
 
+    def __lshift__(self, output_value: OutputValue):
+        self.set_source(output_value)
 
-class InputValue(Value):
-    def __init__(self, name, node, value):
-        super().__init__(name, node, value, True)
-
-
-class OutputValue(Value):
-    def __init__(self, name, node, value):
-        super().__init__(name, node, value, False)
+    def visit(self, visitor: Visitor):
+        visitor.on_input(self)

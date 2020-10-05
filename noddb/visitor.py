@@ -1,38 +1,55 @@
-from .node import Node
-from .value import Value
+from __future__ import annotations
+
+
+class VisitorException(Exception):
+    """
+    Exception thrown if a concrete node has not implemented a visit function.
+    This will only occur for nodes that derive from NodeBase rather than Node.
+    """
+    pass
 
 
 class Visitor:
-    def visit(self, node: Node, depth: int = 0):
-        if isinstance(node, Value):
-            self.on_visit_value(node, depth)
-        else:
-            self.on_visit_node(node, depth)
-
-        for _, child in node.children.items():
-            self.visit(child, depth + 1)
-
-    def on_visit_node(self, node: Node, depth: int):
+    def on_node_enter(self, node: Node):
+        """
+        Callback when entering, or descending into, a node in hierarchy.
+        :param node: node in hierarchy
+        """
         pass
 
-    def on_visit_value(self, value: Value, depth: int):
+    def on_node_exit(self, node: Node):
+        """
+        Callback when existing, or popping out from, a node in hierarchy.
+        :param node: node in hierarchy
+        """
         pass
 
+    def on_node_array_enter(self, node: NodeArray):
+        """
+        Callback when entering, or descending into, a node array.
+        :param node: node in hierarchy
+        """
+        pass
 
-class LambdaVisitor(Visitor):
-    def __init__(self, node_lambda=None, value_lambda=None):
-        self.node_lambda = node_lambda
-        self.value_lambda = value_lambda
+    def on_node_array_exit(self, node: NodeArray):
+        """
+        Callback when existing, or popping out from, a node array.
+        :param node: node in hierarchy
+        """
+        pass
 
-    def on_visit_node(self, node: Node, _depth: int):
-        if self.node_lambda:
-            self.node_lambda(node)
+    def on_input(self, value: InputValue):
+        """
+        Callback when an input value has been found in traversal
+        :param value: value in hierarchy
+        :return:
+        """
+        pass
 
-    def on_visit_value(self, value: Value, _depth: int):
-        if self.value_lambda:
-            self.value_lambda(value)
-
-
-def visit(node: Node, node_lambda=None, value_lambda=None):
-    visitor = LambdaVisitor(node_lambda, value_lambda)
-    visitor.visit(node)
+    def on_output(self, value: OutputValue):
+        """
+        Callback when an input value has been found in traversal
+        :param value: value in hierarchy
+        :return:
+        """
+        pass
