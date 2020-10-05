@@ -52,17 +52,20 @@ class NodeBase:
         result += self._name
         return result
 
+    def visit(self, visitor: Visitor):
+        raise VisitException(f'visit not implemented for node type {self.typename}')
+
 
 class NodeContainer(NodeBase):
     """
     Abstract base class for node that contains child nodes that may be accessed
     using square brackets, e.g. foo['bar'].
     """
-    def __getitem__(self, _item_name: str):
-        raise NodeException(f'__getitem__ not implemented for {self.typename}')
-
     def _add_child(self, child: NodeBase):
         raise NodeException(f'_add_child not implemented for {self.typename}')
+
+    def __getitem__(self, _item_name: str):
+        raise NodeException(f'__getitem__ not implemented for {self.typename}')
 
 
 class Node(NodeContainer):
