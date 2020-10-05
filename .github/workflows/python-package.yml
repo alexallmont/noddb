@@ -5,9 +5,8 @@ name: Python package
 
 on:
   push:
-    branches: [ node_arrays ]
-  pull_request:
-    branches: [ node_arrays ]
+    branches:
+    - '*'
 
 jobs:
   build:
