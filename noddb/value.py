@@ -2,13 +2,29 @@ from .node import Node
 
 
 class ValueException(Exception):
+    """
+    This exception is raised if there is a problem setting what is stored in the
+    value, or for invalid connections between outputs and inputs.
+    """
     pass
 
 
-class Value(Node):
-    def __init__(self, name, node, value):
-        super().__init__(name, node)
+class ValueBase(Node):
+    """
+    Abstract base for storing a value in a node. This is a child of a node so
+    derives from Node to inherit the parent-child behaviour. Concrete values
+    are either inputs or outputs, which have different behaviour for setting
+    values and for connectability.
+    """
+    def __init__(self, node, name, value):
+        super().__init__(parent=node, name=name)
         self._value = value
+
+    def is_input(self):
+        return False
+
+    def is_output(self):
+        return False
 
     def value(self):
         return self._value
@@ -26,7 +42,11 @@ class Value(Node):
         self._value = value
 
 
-class OutputValue(Value):
+class OutputValue(ValueBase):
+    """
+    An output is a value that has a right shift >> operator so it may be
+    connected to any number of inputs, overriding their value.
+    """
     def is_output(self):
         return True
 
@@ -34,9 +54,14 @@ class OutputValue(Value):
         input_value.set_source(self)
 
 
-class InputValue(Value):
-    def __init__(self, name, node, value):
-        super().__init__(name, node, value)
+class InputValue(ValueBase):
+    """
+    An input is a value that may be overridden by being connected to a
+    specific output. This 'sourcing' of the the input value allows data
+    to flow through the node-value graph.
+    """
+    def __init__(self, node, name, value):
+        super().__init__(node, name, value)
         self._source = None
 
     def is_input(self):
