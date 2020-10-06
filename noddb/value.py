@@ -1,5 +1,6 @@
 from __future__ import annotations
-from .node import Node, NodeContainer
+from .node import Node, NodeBase, NodeContainer
+from .visitor import Visitor
 
 
 class ValueException(Exception):
@@ -48,14 +49,14 @@ class OutputValue(ValueBase):
     An output is a value that has a right shift >> operator so it may be
     connected to any number of inputs, overriding their value.
     """
+    def visit(self, visitor: Visitor):
+        visitor.on_output(self)
+
     def is_output(self):
         return True
 
     def __rshift__(self, input_value: InputValue):
         input_value.set_source(self)
-
-    def visit(self, visitor: Visitor):
-        visitor.on_output(self)
 
 
 class InputValue(ValueBase):
@@ -67,6 +68,9 @@ class InputValue(ValueBase):
     def __init__(self, node: NodeBase, name: str, value):
         super().__init__(node, name, value)
         self._source = None
+
+    def visit(self, visitor: Visitor):
+        visitor.on_input(self)
 
     def is_input(self):
         return True
@@ -125,6 +129,3 @@ class InputValue(ValueBase):
 
     def __lshift__(self, output_value: OutputValue):
         self.set_source(output_value)
-
-    def visit(self, visitor: Visitor):
-        visitor.on_input(self)

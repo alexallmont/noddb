@@ -1,5 +1,4 @@
-from .visitor import Visitor
-from .visitor import VisitorException  # noqa, F401
+from .visitor import Visitor, VisitorException
 
 
 class NodeException(Exception):
@@ -57,7 +56,7 @@ class NodeBase:
         return result
 
     def visit(self, visitor: Visitor):
-        raise VisitException(f'visit not implemented for node type {self.typename}')
+        raise VisitorException(f'visit not implemented for node type {self.typename}')
 
 
 class NodeContainer(NodeBase):
@@ -114,6 +113,12 @@ class NodeArray(NodeContainer):
         self._child_list = []
         super().__init__(parent, name)
 
+    def visit(self, visitor: Visitor):
+        visitor.on_node_array_enter(self)
+        for child in self._child_list:
+            child.visit(visitor)
+        visitor.on_node_array_exit(self)
+
     def _add_child(self, child: NodeBase):
         if child._name:
             raise NodeException(f"NodeArray children must not be named: found 'name' in {self.path()}")
@@ -132,9 +137,3 @@ class NodeArray(NodeContainer):
     @property
     def children(self):
         return self._child_list
-
-    def visit(self, visitor: Visitor):
-        visitor.on_node_array_enter(self)
-        for child in self._child_list:
-            child.visit(visitor)
-        visitor.on_node_array_exit(self)

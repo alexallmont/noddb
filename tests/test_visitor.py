@@ -3,29 +3,6 @@ from noddb.value import InputValue, OutputValue
 from noddb.visitor import Visitor
 
 
-class LambdaVisitor(Visitor):
-    def __init__(self, fn):
-        self.fn = fn
-
-    def on_node_enter(self, node: Node):
-        self.fn(node)
-
-    def on_node_exit(self, node: Node):
-        self.fn(node)
-
-    def on_node_array_enter(self, node: NodeArray):
-        self.fn(node)
-
-    def on_node_array_exit(self, node: NodeArray):
-        self.fn(node)
-
-    def on_input(self, value: InputValue):
-        self.fn(node)
-
-    def on_output(self, value: OutputValue):
-        self.fn(node)
-
-
 def test_visit_values():
     fish = Node(None, 'fish')
     InputValue(fish, 'fingers', int(0))
