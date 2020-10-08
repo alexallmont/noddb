@@ -100,6 +100,15 @@ class Node(NodeContainer):
             child.visit(visitor)
         visitor.on_node_exit(self)
 
+    def is_custom(self):
+        """
+        Customised nodes are concrete derivatives of Node, for example with inputs and outputs declared
+        in it's constructor. Unlike container nodes, a concrete implementation usually does not need to
+        store any of its children, because they will be created in its constructor.
+        :return: False if this is exactly a Node container type, True if customised
+        """
+        return type(self) != Node
+
     @property
     def children(self):
         return list(self._child_dict.values())
