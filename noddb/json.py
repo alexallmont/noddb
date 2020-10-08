@@ -11,10 +11,14 @@ class JsonRegistry:
         self.node_dict = {typ.__name__: typ for typ in node_types}
         self.value_dict = {typ.__name__: typ for typ in value_types + standard_value_types()}
 
-    def export_json(self, roots: List[NodeBase]):
+    def export_json(self, nodes: List[NodeBase]):
+        # Allow roots to be a single node or a list of nodes
+        if isinstance(nodes, NodeBase):
+            nodes = [nodes]
+
         export = ExportVisitor(self)
-        for root in roots:
-            root.visit(export)
+        for node in nodes:
+            node.visit(export)
         return export.to_json()
 
 
