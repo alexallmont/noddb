@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from .node import Node, NodeArray, NodeBase
 from .std_value import standard_value_types
@@ -18,8 +18,8 @@ class JsonRegistry:
     def __init__(self, custom_types: List[NodeBase] = []):
         self.type_dict = {typ.__name__: typ for typ in custom_types + standard_value_types()}
 
-    def export_json(self, nodes: List[NodeBase]):
-        # Allow roots to be a single node or a list of nodes
+    def export_json(self, nodes: Union[NodeBase, list]):
+        # Allow roots to be a single node or list of nodes
         if isinstance(nodes, NodeBase):
             nodes = [nodes]
 
@@ -60,7 +60,7 @@ class JsonRegistry:
 class NodesLoader:
     def __init__(self, registry: JsonRegistry, json_dict: dict):
         self.registry = registry
-        self.nodes = []
+        self.nodes = {}
         self.node_dict = {}
 
         self._node_stack = []
@@ -108,7 +108,7 @@ class NodesLoader:
 
         # Store root nodes in returned import list
         if not parent:
-            self.nodes.append(node)
+            self.nodes[name] = node
         return node
 
 

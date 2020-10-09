@@ -159,9 +159,9 @@ def test_node_import():
         'sources': {}
     })
     assert len(a_nodes) == 1
-    assert type(a_nodes[0]) == InputInt
-    assert a_nodes[0].name == 'root'
-    assert a_nodes[0].value() == 0
+    assert type(a_nodes['root']) == InputInt
+    assert a_nodes['root'].name == 'root'
+    assert a_nodes['root'].value() == 0
 
     b_nodes = registry.import_json({
         'nodes': {
@@ -172,10 +172,10 @@ def test_node_import():
         'sources': {}
     })
     assert len(b_nodes) == 2
-    assert type(b_nodes[0]) == NodeArray
-    assert len(b_nodes[0].children) == 1
-    assert type(b_nodes[0][0]) == InputInt
-    assert type(b_nodes[1]) == FooNode
+    assert type(b_nodes['root1']) == NodeArray
+    assert len(b_nodes['root1'].children) == 1
+    assert type(b_nodes['root1'][0]) == InputInt
+    assert type(b_nodes['root2']) == FooNode
 
     c_nodes = registry.import_json({
         'nodes': {
@@ -190,12 +190,12 @@ def test_node_import():
         'values': {},
         'sources': {}
     })
-    assert type(c_nodes[0]) == Node
-    assert c_nodes[0].name == 'foo'
-    assert type(c_nodes[0]['bar']) == Node
-    assert type(c_nodes[0]['bar']['a']) == FooNode
-    assert type(c_nodes[0]['bar']['b']) == InputBool
-    assert type(c_nodes[0]['bar']['c']) == OutputFloat
+    assert type(c_nodes['foo']) == Node
+    assert c_nodes['foo'].name == 'foo'
+    assert type(c_nodes['foo']['bar']) == Node
+    assert type(c_nodes['foo']['bar']['a']) == FooNode
+    assert type(c_nodes['foo']['bar']['b']) == InputBool
+    assert type(c_nodes['foo']['bar']['c']) == OutputFloat
 
 
 def test_value_import_set():
@@ -209,8 +209,8 @@ def test_value_import_set():
         },
         'sources': {}
     })
-    assert type(nodes[0]) == OutputString
-    assert nodes[0].value() == 'stuff'
+    assert type(nodes['a']) == OutputString
+    assert nodes['a'].value() == 'stuff'
 
     nodes = registry.import_json({
         'nodes': {
@@ -231,10 +231,10 @@ def test_value_import_set():
         },
         'sources': {}
     })
-    assert type(nodes[0]['bar'][0][0][0]) == OutputFloat
-    assert type(nodes[0]['bar'][0][0][1]) == InputFloat
-    assert nodes[0]['bar'][0][0][0].value() == approx(3)
-    assert nodes[0]['bar'][0][0][1].value() == approx(7)
+    assert type(nodes['foo']['bar'][0][0][0]) == OutputFloat
+    assert type(nodes['foo']['bar'][0][0][1]) == InputFloat
+    assert nodes['foo']['bar'][0][0][0].value() == approx(3)
+    assert nodes['foo']['bar'][0][0][1].value() == approx(7)
 
 
 def test_source_import_set():
@@ -255,6 +255,6 @@ def test_source_import_set():
             'bar.b': 'foo.a'
         }
     })
-    assert nodes[0]['a'].value() == approx(6)
-    assert nodes[1]['b'].is_sourced() is True
-    assert nodes[1]['b'].value() == approx(6)
+    assert nodes['foo']['a'].value() == approx(6)
+    assert nodes['bar']['b'].is_sourced() is True
+    assert nodes['bar']['b'].value() == approx(6)
