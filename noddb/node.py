@@ -79,6 +79,11 @@ class Node(NodeContainer):
     def __init__(self, parent=None, name=None):
         self._child_dict = {}
         super().__init__(parent, name)
+        self.init_custom()
+
+    @property
+    def children(self):
+        return list(self._child_dict.values())
 
     def _add_child(self, child: NodeBase):
         if not isinstance(child._name, str):
@@ -100,9 +105,31 @@ class Node(NodeContainer):
             child.visit(visitor)
         visitor.on_node_exit(self)
 
-    @property
-    def children(self):
-        return list(self._child_dict.values())
+    def init_custom(self) -> None:
+        """
+        This convenience callback is so custom nodes can initialise themselves without needing to
+        override __init__ every time, and hence all default arguments. Generally this is where any
+        input or output values are added.
+        """
+        pass
+
+    def is_custom(self) -> bool:
+        """
+        Customised nodes are concrete derivatives of Node, for example with inputs and outputs declared
+        in it's constructor. Unlike container nodes, a concrete implementation usually does not need to
+        store any of its children, because they will be created in its constructor.
+        :return: False if this is exactly a Node container type, True if customised
+        """
+        return type(self) != Node
+
+    def evaluate(self, *_args, **_kwargs) -> None:
+        """
+        Node evaluation is open for implementation in derived custom nodes to process their input
+        values and propagate their outputs.
+        :param _args: Arguments are specified but ignored for application-specific derivatives
+        :param _kwargs: Arguments are specified but ignored for application-specific derivatives
+        """
+        pass
 
 
 class NodeArray(NodeContainer):
@@ -113,11 +140,9 @@ class NodeArray(NodeContainer):
         self._child_list = []
         super().__init__(parent, name)
 
-    def visit(self, visitor: Visitor):
-        visitor.on_node_array_enter(self)
-        for child in self._child_list:
-            child.visit(visitor)
-        visitor.on_node_array_exit(self)
+    @property
+    def children(self):
+        return self._child_list
 
     def _add_child(self, child: NodeBase):
         if child._name:
@@ -134,6 +159,8 @@ class NodeArray(NodeContainer):
             )
         return self._child_list[child_index]
 
-    @property
-    def children(self):
-        return self._child_list
+    def visit(self, visitor: Visitor):
+        visitor.on_node_array_enter(self)
+        for child in self._child_list:
+            child.visit(visitor)
+        visitor.on_node_array_exit(self)
