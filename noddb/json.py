@@ -1,6 +1,7 @@
 from typing import List, Union
 
 from .node import Node, NodeArray, NodeBase
+from .path import path_to_node
 from .std_value import standard_value_types
 from .value import InputValue, OutputValue
 from .visitor import Visitor
@@ -40,18 +41,13 @@ class JsonRegistry:
 
         # Set values from keys in values dict
         for path, value in json_dict['values'].items():
-            if path not in loader.node_dict:
-                raise ImportException(f"Invalid path '{path}' when loading values")
-            loader.node_dict[path].set_value(value)
+            node = path_to_node(loader.nodes, path)
+            node.set_value(value)
 
         # Connect values from keys in sources dict
         for dst, src in json_dict['sources'].items():
-            if dst not in loader.node_dict:
-                raise ImportException(f"Invalid input destination '{dst}' when loading sources")
-            if src not in loader.node_dict:
-                raise ImportException(f"Invalid output source '{src}' when loading sources")
-            dst_value = loader.node_dict[dst]
-            src_value = loader.node_dict[src]
+            src_value = path_to_node(loader.nodes, src)
+            dst_value = path_to_node(loader.nodes, dst)
             dst_value << src_value
 
         return loader.nodes
@@ -61,7 +57,6 @@ class NodesLoader:
     def __init__(self, registry: JsonRegistry, json_dict: dict):
         self.registry = registry
         self.nodes = {}
-        self.node_dict = {}
 
         self._node_stack = []
         self._import_dict(json_dict)
@@ -104,7 +99,6 @@ class NodesLoader:
     def _create_node(self, type_class: NodeBase, name=None):
         parent = self._node_stack[-1] if self._node_stack else None
         node = type_class(parent, name)
-        self.node_dict[node.path()] = node
 
         # Store root nodes in returned import list
         if not parent:
