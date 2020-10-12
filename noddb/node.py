@@ -80,6 +80,10 @@ class Node(NodeContainer):
         self._child_dict = {}
         super().__init__(parent, name)
 
+    @property
+    def children(self):
+        return list(self._child_dict.values())
+
     def _add_child(self, child: NodeBase):
         if not isinstance(child._name, str):
             raise NodeException(f'Node children must be named: unnamed {child.typename} in {self.path()}')
@@ -109,10 +113,6 @@ class Node(NodeContainer):
         """
         return type(self) != Node
 
-    @property
-    def children(self):
-        return list(self._child_dict.values())
-
 
 class NodeArray(NodeContainer):
     """
@@ -122,11 +122,9 @@ class NodeArray(NodeContainer):
         self._child_list = []
         super().__init__(parent, name)
 
-    def visit(self, visitor: Visitor):
-        visitor.on_node_array_enter(self)
-        for child in self._child_list:
-            child.visit(visitor)
-        visitor.on_node_array_exit(self)
+    @property
+    def children(self):
+        return self._child_list
 
     def _add_child(self, child: NodeBase):
         if child._name:
@@ -143,6 +141,8 @@ class NodeArray(NodeContainer):
             )
         return self._child_list[child_index]
 
-    @property
-    def children(self):
-        return self._child_list
+    def visit(self, visitor: Visitor):
+        visitor.on_node_array_enter(self)
+        for child in self._child_list:
+            child.visit(visitor)
+        visitor.on_node_array_exit(self)
