@@ -3,6 +3,7 @@ from typing import List, Union
 from .node import Node, NodeArray, NodeBase
 from .path import path_to_node
 from .std_value import standard_value_types
+from .ref_value import InputRef, OutputRef
 from .value import InputValue, OutputValue
 from .visitor import Visitor
 
@@ -27,10 +28,11 @@ class JsonRegistry:
     """
     The registry wraps up import and export functions. This is because an application requires
     a common set of registered node types. The registry always contains the standard input and
-    output value types (int, float, string and bool), and container types Node and NodeArray
-    are implicitly supported. If an application has it's own custom nodes defined, say for
-    processing inputs into output values, then the types of those nodes must be passed to the
-    registry, e.g. JsonRegistry([FooNode, BarNode, CustomNode]).
+    output value types (int, float, string and bool) and references, along with container types
+    Node and NodeArray which are implicitly supported (represented as dict in list in json).
+    If an application has it's own custom nodes defined, say for processing inputs into output
+    values, then the types of those nodes must be passed to the registry, e.g.
+    JsonRegistry([FooNode, BarNode, CustomNode]).
 
     The json is structured into three parts: a top-level dictionary for root nodes, each of which
     recursively specifies the type of children in the hierarchy; a dictionary keying paths to
@@ -65,7 +67,8 @@ class JsonRegistry:
         }
     """
     def __init__(self, custom_types: List[NodeBase] = []):
-        self.type_dict = {typ.__name__: typ for typ in custom_types + standard_value_types()}
+        default_types = standard_value_types() + [InputRef, OutputRef]
+        self.type_dict = {typ.__name__: typ for typ in custom_types + default_types}
 
     def export_json(self, nodes: Union[NodeBase, list]):
         # Allow roots to be a single node or list of nodes
@@ -227,6 +230,9 @@ class _ExportVisitor(Visitor):
             self.values[value.path()] = value.value()
 
     def on_output(self, value: OutputValue):
+        if not value.is_serialised():
+            return
+
         if self.can_store():
             if value.typename not in self.registry.type_dict:
                 raise ExportException(f"Unexpected output value type '{value.typename}' during export")

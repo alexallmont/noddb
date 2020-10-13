@@ -43,6 +43,9 @@ class ValueBase(Node):
             )
         self._value = value
 
+    def is_serialised(self):
+        return True
+
 
 class OutputValue(ValueBase):
     """
@@ -111,7 +114,7 @@ class InputValue(ValueBase):
                 )
             )
 
-        if not isinstance(self._value, type(output._value)):
+        if not self.can_source_from(output):
             raise ValueException(
                 'Cannot source "{}" ({}) to mismatched output "{}" ({})'.format(
                     self.path(),
@@ -121,6 +124,9 @@ class InputValue(ValueBase):
                 )
             )
         self._source = output
+
+    def can_source_from(self, output: OutputValue):
+        return isinstance(self._value, type(output._value))
 
     def clear_source(self):
         if not self._source:
